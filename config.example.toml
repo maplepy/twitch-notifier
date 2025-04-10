@@ -2,6 +2,7 @@
 
 # Your Twitch Application Client ID.
 # Register an application at https://dev.twitch.tv/console/apps to get one.
+# Use the name "twitch-notifier" for the application.
 twitch_client_id = "YOUR_TWITCH_CLIENT_ID_HERE"
 
 # List of Twitch streamer usernames to monitor.
