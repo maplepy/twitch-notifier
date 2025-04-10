@@ -1,6 +1,6 @@
+mod notifications;
 mod twitch_api;
 
-use notify_rust::Notification;
 use serde::Deserialize;
 use std::collections::HashSet;
 use std::time::Duration;
@@ -66,29 +66,6 @@ pub fn load_settings() -> Result<Settings> {
     let settings: Settings = settings.try_deserialize()?;
 
     Ok(settings)
-}
-
-/// Sends a desktop notification.
-fn send_notification(streamer_name: &str, game_name: &str) {
-    let summary = format!("{} is live!", streamer_name);
-    let body = format!("Playing: {}", game_name);
-
-    // Use app_name that matches your .desktop file if you create one later
-    match Notification::new()
-        .appname("twitch-notifier")
-        .summary(&summary)
-        .body(&body)
-        // .icon("dialog-information") // Optional: specify an icon
-        .timeout(notify_rust::Timeout::Milliseconds(10000)) // Show for 10 seconds
-        .show()
-    {
-        Ok(_) => {
-            info!("Sent notification for {}", streamer_name);
-        }
-        Err(e) => {
-            error!("Failed to send notification: {}", e);
-        }
-    }
 }
 
 // Mark main as async using tokio
@@ -169,7 +146,7 @@ async fn main() -> Result<()> {
                             "{} just went live playing {}!",
                             stream.user_name, stream.game_name
                         );
-                        send_notification(&stream.user_name, &stream.game_name);
+                        notifications::send_notification(&stream.user_name, &stream.game_name);
                     }
                 }
 
