@@ -1,5 +1,3 @@
-// src/notifications.rs
-
 use notify_rust::Notification;
 use tracing::{error, info};
 

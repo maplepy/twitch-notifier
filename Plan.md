@@ -48,3 +48,33 @@ This plan outlines the Minimum Viable Product (MVP) features for the Rust-based 
 - [x] Add initial dependencies to `Cargo.toml`.
 - [x] Set up basic error handling (e.g., using `anyhow` or `thiserror`).
 - [x] Create a basic `README.md` with setup and usage instructions.
+
+## Future Enhancements (Post-MVP)
+
+### 6. Game Filtering (Blacklist/Whitelist)
+
+- [ ] Add configuration options for game blacklist/whitelist mode.
+- [ ] Add configuration option for list of games (either to block or allow).
+- [ ] Update configuration loading to include filter settings.
+- [ ] Modify notification logic to check game name against the filter list before sending.
+
+### 7. Game Change Notifications
+
+- [ ] Store the previously seen game ID/name for each live stream.
+- [ ] In the main loop, compare the current game with the previous game for live streams.
+- [ ] Send a different notification format when a streamer changes games (e.g., "[Streamer] is now playing [New Game]!").
+- [ ] Update the stored game state.
+
+### 8. Improved Background Execution / Service
+
+- [ ] Create a systemd service unit file for running the notifier reliably.
+- [ ] Add instructions to `README.md` for enabling/starting the systemd service.
+- [ ] (Optional) Explore self-daemonization options (less common with systemd).
+
+### 9. Refinements & Other
+
+- [ ] Implement token expiry checking and proactive refresh in `TwitchClient`.
+- [ ] Add command-line arguments (e.g., for specifying config file path, log level).
+- [ ] Improve error handling resilience (e.g., backoff strategies for API errors).
+- [ ] Update `README.md` with advanced configuration and usage.
+- [ ] Clean up temporary `#[allow(...)]` attributes.
