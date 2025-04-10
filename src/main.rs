@@ -1,12 +1,15 @@
 mod twitch_api;
 
 use serde::Deserialize;
+use std::collections::HashSet;
+use std::time::Duration;
 use thiserror::Error;
-use tracing::{error, info, Level};
+use tokio::time::interval;
+use tracing::{debug, error, info, warn, Level};
 use tracing_subscriber::FmtSubscriber;
 
 // Import the client and its error type
-use crate::twitch_api::{ApiError, TwitchClient};
+use crate::twitch_api::{ApiError, TwitchClient, User};
 
 #[derive(Debug, Deserialize)]
 pub struct Settings {
@@ -67,7 +70,6 @@ pub fn load_settings() -> Result<Settings> {
 // Mark main as async using tokio
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Return our Result type
     // Initialize tracing subscriber
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::INFO) // Log INFO level and above
@@ -75,53 +77,119 @@ async fn main() -> Result<()> {
     tracing::subscriber::set_global_default(subscriber)
         .expect("Setting default tracing subscriber failed");
 
-    // Load settings - propagate error with `?`
+    // Load settings
     let settings = load_settings()?;
     info!("Configuration loaded successfully!");
-    info!(streamers = ?settings.streamers, "Monitoring streamers");
-    info!(check_interval = %settings.check_interval_seconds, "Check interval (seconds)");
 
     // Create Twitch client
     info!("Initializing Twitch client...");
     let mut twitch_client = TwitchClient::new(
-        settings.twitch_client_id.clone(), // Clone credentials from settings
+        settings.twitch_client_id.clone(),
         settings.twitch_client_secret.clone(),
     )?;
 
     // Authenticate with Twitch
-    if let Err(e) = twitch_client.get_app_access_token().await {
-        error!("Failed to authenticate with Twitch: {}", e);
-        // Depending on the error type, could potentially retry later
-        return Err(e.into()); // Convert ApiError into our main Error type
-    }
+    twitch_client.get_app_access_token().await?;
     info!("Successfully authenticated with Twitch API.");
 
-    // Get user IDs for configured streamers
-    if settings.streamers.is_empty() {
+    // Get initial user data
+    let monitored_users: Vec<User> = if settings.streamers.is_empty() {
         info!("No streamers configured to monitor.");
+        vec![]
     } else {
-        info!("Fetching user info for configured streamers...");
-        match twitch_client.get_users_by_login(&settings.streamers).await {
-            Ok(users) => {
-                if users.is_empty() {
-                    info!("No Twitch users found for the configured login names.");
-                } else {
-                    info!("Successfully fetched user info:");
-                    for user in users {
-                        info!(user_id = %user.id, login = %user.login, display_name = %user.display_name);
+        info!("Fetching user info for: {:?}", settings.streamers);
+        let users = twitch_client
+            .get_users_by_login(&settings.streamers)
+            .await?;
+        if users.is_empty() {
+            warn!("No Twitch users found for the configured login names.");
+        } else {
+            info!("Successfully fetched info for {} users", users.len());
+        }
+        users
+    };
+
+    if monitored_users.is_empty() {
+        info!("Exiting as there are no valid users to monitor.");
+        return Ok(());
+    }
+
+    let monitored_user_ids: Vec<String> = monitored_users.iter().map(|u| u.id.clone()).collect();
+    let mut previously_live_user_ids: HashSet<String> = HashSet::new();
+
+    info!(
+        "Starting monitoring loop (checking every {} seconds)",
+        settings.check_interval_seconds
+    );
+    let mut check_interval = interval(Duration::from_secs(settings.check_interval_seconds));
+
+    // Main monitoring loop
+    loop {
+        check_interval.tick().await;
+        debug!("Checking stream statuses...");
+
+        match twitch_client
+            .get_streams_by_user_id(&monitored_user_ids)
+            .await
+        {
+            Ok(live_streams) => {
+                let currently_live_user_ids: HashSet<String> =
+                    live_streams.iter().map(|s| s.user_id.clone()).collect();
+                debug!("Currently live: {:?}", currently_live_user_ids);
+                debug!("Previously live: {:?}", previously_live_user_ids);
+
+                // Detect streams that just went live
+                for stream in &live_streams {
+                    if !previously_live_user_ids.contains(&stream.user_id) {
+                        info!(
+                            "{} just went live playing {}!",
+                            stream.user_name, stream.game_name
+                        );
+                        // TODO: Send notification here
                     }
-                    // TODO: Store these users for later use in the loop
                 }
+
+                // Detect streams that just went offline (optional logging)
+                // for user_id in previously_live_user_ids.difference(&currently_live_user_ids) {
+                //    if let Some(user) = monitored_users.iter().find(|u| &u.id == user_id) {
+                //        debug!("{} went offline.", user.display_name);
+                //    }
+                // }
+
+                // Update the previous state for the next check
+                previously_live_user_ids = currently_live_user_ids;
+            }
+            Err(ApiError::Request(e)) if e.is_timeout() => {
+                warn!("Twitch API request timed out. Retrying next cycle.");
+                // Potentially increase backoff here if it happens repeatedly
+            }
+            Err(ApiError::TwitchError { status, .. }) if status.is_server_error() => {
+                warn!(status = %status, "Twitch API server error. Retrying next cycle.");
+                // Potentially increase backoff here
+            }
+            Err(ApiError::MissingToken) => {
+                // Attempt to re-authenticate if token is missing/expired
+                warn!("App Access Token missing or invalid. Attempting re-authentication...");
+                if let Err(auth_err) = twitch_client.get_app_access_token().await {
+                    error!(
+                        "Failed to re-authenticate with Twitch: {}. Exiting.",
+                        auth_err
+                    );
+                    // Consider more robust retry logic or backoff for persistent auth failures
+                    return Err(auth_err.into());
+                }
+                info!("Successfully re-authenticated.");
+                // Skip the rest of this tick, will check streams on the next one
+                continue;
             }
             Err(e) => {
-                error!("Failed to fetch user info: {}", e);
-                // Decide if this is a fatal error or if we can continue/retry
+                // For other errors (like JSON parsing, non-server HTTP errors), log and potentially exit
+                error!("Unhandled error during stream check: {}. Exiting.", e);
                 return Err(e.into());
+                // Or decide to just log and continue: warn!(...)
             }
         }
     }
-
-    // TODO: Implement main monitoring loop here
-
-    Ok(())
+    // Loop is infinite, so Ok(()) is unreachable here, but keep it for function signature
+    // Ok(())
 }
