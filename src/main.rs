@@ -1,16 +1,20 @@
+mod twitch_api;
+
 use serde::Deserialize;
-use std::path::PathBuf;
 use thiserror::Error;
+use tracing::{error, info, Level};
+use tracing_subscriber::FmtSubscriber;
 
 #[derive(Debug, Deserialize)]
 pub struct Settings {
     pub twitch_client_id: String,
+    pub twitch_client_secret: String,
     pub streamers: Vec<String>,
-    #[serde(default = "default_poll_interval")]
-    pub poll_interval_seconds: u64,
+    #[serde(default = "default_check_interval")]
+    pub check_interval_seconds: u64,
 }
 
-fn default_poll_interval() -> u64 {
+fn default_check_interval() -> u64 {
     60 // Default to 60 seconds
 }
 
@@ -19,28 +23,28 @@ pub enum Error {
     #[error("Configuration loading error: {0}")]
     Config(#[from] config::ConfigError),
 
-    #[error("I/O error: {0}")]
-    Io(#[from] std::io::Error), // Added for potential future use
+    #[error("Failed to get current directory: {0}")]
+    CurrentDir(#[from] std::io::Error),
 }
 
 pub fn load_settings() -> Result<Settings, Error> {
     let config_file_name = "config.toml";
 
-    // Base path is the current working directory
-    let base_path = std::env::current_dir().expect("Failed to determine current directory");
-    let config_path = base_path.join(config_file_name);
-
-    println!(
-        "Attempting to load configuration from: {}",
-        config_path.display()
+    info!(
+        "Attempting to load configuration from '{}'",
+        config_file_name
     );
 
     let settings = config::Config::builder()
-        // Add configuration source: config.toml (required)
-        .add_source(config::File::with_name(config_path.to_str().unwrap()).required(true))
+        // Look for `config.toml` in the current directory
+        .add_source(config::File::with_name(config_file_name).required(true))
         // Add environment variable overrides (optional)
         // e.g., `APP_TWITCH_CLIENT_ID=...` would override `twitch_client_id`
-        .add_source(config::Environment::with_prefix("APP").separator("__"))
+        .add_source(
+            config::Environment::with_prefix("APP")
+                .separator("__")
+                .ignore_empty(true),
+        )
         .build()?;
 
     // Deserialize the configuration
@@ -50,16 +54,22 @@ pub fn load_settings() -> Result<Settings, Error> {
 }
 
 fn main() {
+    // Initialize tracing subscriber
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::INFO) // Log INFO level and above
+        .finish();
+    tracing::subscriber::set_global_default(subscriber)
+        .expect("Setting default tracing subscriber failed");
+
     match load_settings() {
         Ok(settings) => {
-            println!("Configuration loaded successfully!");
-            println!("Client ID: {}", settings.twitch_client_id);
-            println!("Streamers: {:?}", settings.streamers);
-            println!("Poll Interval: {} seconds", settings.poll_interval_seconds);
+            info!("Configuration loaded successfully!");
+            info!(client_id = %settings.twitch_client_id, "Twitch Client ID"); // Use structured logging
+            info!(streamers = ?settings.streamers, "Monitoring streamers");
+            info!(check_interval = %settings.check_interval_seconds, "Check interval (seconds)");
         }
         Err(e) => {
-            eprintln!("Failed to load configuration: {}", e);
-            // In a real app, you might want to exit gracefully or retry
+            error!("Failed to load configuration: {}", e);
             std::process::exit(1);
         }
     }

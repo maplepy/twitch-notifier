@@ -5,6 +5,11 @@
 # Use the name "twitch-notifier" for the application.
 twitch_client_id = "YOUR_TWITCH_CLIENT_ID_HERE"
 
+# Your Twitch Application Client Secret.
+# Get this from the Twitch Developer Portal (same place as Client ID).
+# !! Keep this secret safe - do not commit it directly to public repositories !!
+twitch_client_secret = "YOUR_TWITCH_CLIENT_SECRET_HERE"
+
 # List of Twitch streamer usernames to monitor.
 streamers = [
     "hasanabi",

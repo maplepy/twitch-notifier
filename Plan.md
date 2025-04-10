@@ -8,7 +8,7 @@ This plan outlines the Minimum Viable Product (MVP) features for the Rust-based 
 
 - [ ] Define configuration file format (e.g., TOML).
 - [ ] Store the list of streamer usernames to follow.
-- [ ] Store Twitch API credentials (Client ID, potentially an App Access Token or logic to obtain one).
+- [ ] Store Twitch API credentials (Client ID **and Client Secret**).
 - [ ] Implement logic to load configuration at startup.
 - [ ] Handle errors for missing or malformed configuration files.
 
@@ -20,7 +20,7 @@ This plan outlines the Minimum Viable Product (MVP) features for the Rust-based 
 - [ ] Implement logic to get user IDs from usernames.
 - [ ] Implement logic to fetch stream status for the followed user IDs.
 - [ ] Store the previous "live" status of each streamer to detect transitions (offline -> live).
-- [ ] Handle Twitch API authentication (Client ID + App Access Token is simplest for read-only).
+- [ ] Handle Twitch API authentication (**Client ID + Client Secret -> App Access Token**).
 - [ ] Handle potential API errors and rate limiting gracefully.
 
 ### 3. Desktop Notifications
