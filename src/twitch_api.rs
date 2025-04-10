@@ -193,7 +193,64 @@ impl TwitchClient {
         }
     }
 
-    // TODO: Method to get stream status by user IDs
+    /// Gets live Stream information for a list of user IDs.
+    /// Note: This endpoint only returns currently live streams.
+    pub async fn get_streams_by_user_id(
+        &self,
+        user_ids: &[String],
+    ) -> Result<Vec<Stream>, ApiError> {
+        if user_ids.is_empty() {
+            return Ok(vec![]); // Nothing to fetch
+        }
+
+        let token = self.access_token.as_deref().ok_or(ApiError::MissingToken)?;
+
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            AUTHORIZATION,
+            HeaderValue::from_str(&format!("Bearer {}", token))
+                .expect("Failed to create auth header value"),
+        );
+        headers.insert(
+            "Client-Id",
+            HeaderValue::from_str(&self.client_id)
+                .expect("Failed to create client ID header value"),
+        );
+
+        // Build the URL with query parameters: ?user_id=123&user_id=456...
+        let url = format!("{}/streams", TWITCH_API_BASE_URL);
+        let query_params: Vec<(String, String)> = user_ids
+            .iter()
+            .map(|id| ("user_id".to_string(), id.clone()))
+            .collect();
+
+        debug!(user_ids = ?user_ids, "Fetching stream data from Twitch API");
+
+        let response = self
+            .client
+            .get(&url)
+            .headers(headers)
+            .query(&query_params)
+            .send()
+            .await?;
+
+        if response.status().is_success() {
+            let stream_data: TwitchDataWrapper<Stream> = response.json().await?;
+            debug!("Received data for {} live streams", stream_data.data.len());
+            Ok(stream_data.data)
+        } else {
+            let status = response.status();
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "<Failed to read error body>".to_string());
+            warn!(status = %status, error_body = %error_text, "Failed to get stream data");
+            Err(ApiError::TwitchError {
+                status,
+                message: error_text,
+            })
+        }
+    }
 }
 
 // TODO: Add TwitchClient struct and methods
