@@ -5,6 +5,9 @@ use thiserror::Error;
 use tracing::{error, info, Level};
 use tracing_subscriber::FmtSubscriber;
 
+// Import the client and its error type
+use crate::twitch_api::{ApiError, TwitchClient};
+
 #[derive(Debug, Deserialize)]
 pub struct Settings {
     pub twitch_client_id: String,
@@ -25,9 +28,17 @@ pub enum Error {
 
     #[error("Failed to get current directory: {0}")]
     CurrentDir(#[from] std::io::Error),
+
+    // Add variant for API errors
+    #[error("Twitch API error: {0}")]
+    Api(#[from] ApiError),
 }
 
-pub fn load_settings() -> Result<Settings, Error> {
+// Make the result type alias use our top-level Error
+type Result<T> = std::result::Result<T, Error>;
+
+pub fn load_settings() -> Result<Settings> {
+    // Use the Result alias
     let config_file_name = "config.toml";
 
     info!(
@@ -53,7 +64,10 @@ pub fn load_settings() -> Result<Settings, Error> {
     Ok(settings)
 }
 
-fn main() {
+// Mark main as async using tokio
+#[tokio::main]
+async fn main() -> Result<()> {
+    // Return our Result type
     // Initialize tracing subscriber
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::INFO) // Log INFO level and above
@@ -61,16 +75,28 @@ fn main() {
     tracing::subscriber::set_global_default(subscriber)
         .expect("Setting default tracing subscriber failed");
 
-    match load_settings() {
-        Ok(settings) => {
-            info!("Configuration loaded successfully!");
-            info!(client_id = %settings.twitch_client_id, "Twitch Client ID"); // Use structured logging
-            info!(streamers = ?settings.streamers, "Monitoring streamers");
-            info!(check_interval = %settings.check_interval_seconds, "Check interval (seconds)");
-        }
-        Err(e) => {
-            error!("Failed to load configuration: {}", e);
-            std::process::exit(1);
-        }
+    // Load settings - propagate error with `?`
+    let settings = load_settings()?;
+    info!("Configuration loaded successfully!");
+    info!(streamers = ?settings.streamers, "Monitoring streamers");
+    info!(check_interval = %settings.check_interval_seconds, "Check interval (seconds)");
+
+    // Create Twitch client
+    info!("Initializing Twitch client...");
+    let mut twitch_client = TwitchClient::new(
+        settings.twitch_client_id.clone(), // Clone credentials from settings
+        settings.twitch_client_secret.clone(),
+    )?;
+
+    // Authenticate with Twitch
+    if let Err(e) = twitch_client.get_app_access_token().await {
+        error!("Failed to authenticate with Twitch: {}", e);
+        // Depending on the error type, could potentially retry later
+        return Err(e.into()); // Convert ApiError into our main Error type
     }
+    info!("Successfully authenticated with Twitch API.");
+
+    // TODO: Implement main monitoring loop here
+
+    Ok(())
 }

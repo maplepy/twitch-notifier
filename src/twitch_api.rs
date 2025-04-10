@@ -4,7 +4,8 @@
 // use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE}; // TODO: Uncomment when used
 use serde::Deserialize;
 use thiserror::Error;
-// use tracing::{debug, trace, warn}; // TODO: Uncomment when used
+#[allow(unused_imports)] // Allow trace for now
+use tracing::{debug, info, trace, warn};
 
 /// Represents the response for getting an App Access Token.
 #[derive(Debug, Deserialize)]
@@ -87,7 +88,7 @@ impl TwitchClient {
     pub fn new(client_id: String, client_secret: String) -> Result<Self, ApiError> {
         let client = reqwest::Client::builder()
             // Maybe add user agent later
-            .build()?; // Propagate reqwest error
+            .build()?;
 
         Ok(Self {
             client,
@@ -97,7 +98,46 @@ impl TwitchClient {
         })
     }
 
-    // TODO: Method to get/refresh App Access Token
+    /// Fetches or refreshes the App Access Token from Twitch.
+    pub async fn get_app_access_token(&mut self) -> Result<(), ApiError> {
+        // TODO: Check token expiry before fetching a new one
+        info!("Fetching new App Access Token from Twitch");
+
+        let params = [
+            ("client_id", &self.client_id),
+            ("client_secret", &self.client_secret),
+            ("grant_type", &"client_credentials".to_string()), // Use constant later
+        ];
+
+        let response = self
+            .client
+            .post(TWITCH_AUTH_URL)
+            .form(&params)
+            .send()
+            .await?;
+
+        if response.status().is_success() {
+            let token_response: AppAccessTokenResponse = response.json().await?;
+            debug!(
+                "Received new token (expires in {}s)",
+                token_response.expires_in
+            );
+            self.access_token = Some(token_response.access_token);
+            Ok(())
+        } else {
+            let status = response.status();
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "<Failed to read error body>".to_string());
+            warn!(status = %status, error_body = %error_text, "Failed to get App Access Token");
+            Err(ApiError::TwitchError {
+                status,
+                message: error_text,
+            })
+        }
+    }
+
     // TODO: Method to get user IDs from logins
     // TODO: Method to get stream status by user IDs
 }
