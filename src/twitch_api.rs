@@ -1,7 +1,7 @@
 #![allow(dead_code)] // TODO: Remove this when structs/errors are used
                      // src/twitch_api.rs
 
-// use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE}; // TODO: Uncomment when used
+use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION}; // CONTENT_TYPE commented out
 use serde::Deserialize;
 use thiserror::Error;
 #[allow(unused_imports)] // Allow trace for now
@@ -138,7 +138,61 @@ impl TwitchClient {
         }
     }
 
-    // TODO: Method to get user IDs from logins
+    /// Gets Twitch User information for a list of login names.
+    pub async fn get_users_by_login(&self, logins: &[String]) -> Result<Vec<User>, ApiError> {
+        if logins.is_empty() {
+            return Ok(vec![]); // Nothing to fetch
+        }
+
+        let token = self.access_token.as_deref().ok_or(ApiError::MissingToken)?;
+
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            AUTHORIZATION,
+            HeaderValue::from_str(&format!("Bearer {}", token))
+                .expect("Failed to create auth header value"), // Should not fail
+        );
+        headers.insert(
+            "Client-Id",
+            HeaderValue::from_str(&self.client_id)
+                .expect("Failed to create client ID header value"),
+        );
+
+        // Build the URL with query parameters: ?login=user1&login=user2...
+        let url = format!("{}/users", TWITCH_API_BASE_URL);
+        let query_params: Vec<(String, String)> = logins
+            .iter()
+            .map(|login| ("login".to_string(), login.clone()))
+            .collect();
+
+        debug!(logins = ?logins, "Fetching user data from Twitch API");
+
+        let response = self
+            .client
+            .get(&url)
+            .headers(headers)
+            .query(&query_params)
+            .send()
+            .await?;
+
+        if response.status().is_success() {
+            let user_data: TwitchDataWrapper<User> = response.json().await?;
+            debug!("Received data for {} users", user_data.data.len());
+            Ok(user_data.data)
+        } else {
+            let status = response.status();
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "<Failed to read error body>".to_string());
+            warn!(status = %status, error_body = %error_text, "Failed to get user data");
+            Err(ApiError::TwitchError {
+                status,
+                message: error_text,
+            })
+        }
+    }
+
     // TODO: Method to get stream status by user IDs
 }
 

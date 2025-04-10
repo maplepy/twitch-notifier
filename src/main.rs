@@ -96,6 +96,31 @@ async fn main() -> Result<()> {
     }
     info!("Successfully authenticated with Twitch API.");
 
+    // Get user IDs for configured streamers
+    if settings.streamers.is_empty() {
+        info!("No streamers configured to monitor.");
+    } else {
+        info!("Fetching user info for configured streamers...");
+        match twitch_client.get_users_by_login(&settings.streamers).await {
+            Ok(users) => {
+                if users.is_empty() {
+                    info!("No Twitch users found for the configured login names.");
+                } else {
+                    info!("Successfully fetched user info:");
+                    for user in users {
+                        info!(user_id = %user.id, login = %user.login, display_name = %user.display_name);
+                    }
+                    // TODO: Store these users for later use in the loop
+                }
+            }
+            Err(e) => {
+                error!("Failed to fetch user info: {}", e);
+                // Decide if this is a fatal error or if we can continue/retry
+                return Err(e.into());
+            }
+        }
+    }
+
     // TODO: Implement main monitoring loop here
 
     Ok(())
