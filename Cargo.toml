@@ -23,3 +23,5 @@ tracing = "0.1" # Logging framework
 tracing-subscriber = { version = "0.3", features = [
     "env-filter",
 ] } # Logging subscriber
+tray-item = { version = "0.8", features = ["libappindicator"] } # Reverted back to libappindicator
+gtk = "0.15" # Keep for gtk::init()
