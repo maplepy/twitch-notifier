@@ -1,0 +1,15 @@
+# .prettierrc.toml
+
+# Use tabs for indentation
+useTabs = false
+# Tab width
+tabWidth = 2
+# Print width
+printWidth = 80
+# Trailing commas (useful for Rust match arms, etc., though Prettier doesn't format Rust)
+# Setting it for other files like TOML, JSON
+trailingComma = "es5"
+# Add semicolons (mostly relevant for JS/TS, but set for consistency)
+semi = true
+# Use single quotes instead of double quotes
+singleQuote = false

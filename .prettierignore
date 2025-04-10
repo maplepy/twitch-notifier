@@ -1,0 +1,3 @@
+# Ignore patterns for Prettier
+/twitch_notifier/target/
+/twitch_notifier/Cargo.lock
