@@ -1,0 +1,48 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+
+# Exclude generated files or directories if necessary
+# exclude: '^(\.git/|target/|.*\.lock)'
+
+repos:
+  # Standard hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0 # Use a recent tag
+    hooks:
+      - id: trailing-whitespace # Trims trailing whitespace
+      - id: end-of-file-fixer # Ensures files end in a newline
+      - id: check-yaml # Checks yaml files for parseable syntax
+      - id: check-toml # Checks toml files for parseable syntax
+      - id: check-json # Checks json files for parseable syntax
+      - id: check-added-large-files # Prevent giant files from being committed
+      - id: check-merge-conflict # Checks for files that contain merge conflict strings
+      # - id: detect-private-key   # Checks for the presence of private keys (can be noisy)
+
+  # Prettier for non-Rust files
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0 # Use the version corresponding to your installed prettier (or a recent one)
+    hooks:
+      - id: prettier
+        # Run on markdown, yaml, toml, json. Exclude Cargo.lock.
+        files: \.(md|yaml|yml|toml|json)$
+        exclude: Cargo\.lock$
+
+  # Rustfmt and Clippy
+  - repo: local
+    hooks:
+      - id: rustfmt
+        name: rustfmt
+        description: Format Rust code.
+        entry: cargo fmt --all --
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+      - id: clippy
+        name: clippy
+        description: Lint Rust code.
+        # Run clippy with --all-targets and deny warnings
+        entry: cargo clippy --all-targets -- --deny warnings
+        language: system
+        types: [rust]
+        pass_filenames: false
