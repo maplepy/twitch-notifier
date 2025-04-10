@@ -18,27 +18,27 @@ This plan outlines the Minimum Viable Product (MVP) features for the Rust-based 
 - [x] Choose and add JSON parsing library (e.g., `serde` with `serde_json`).
 - [x] Define data structures (`struct`s) for relevant Twitch API responses (e.g., user info, stream info) using `serde`.
 - [x] Implement logic to get user IDs from usernames.
-- [ ] Implement logic to fetch stream status for the followed user IDs.
-- [ ] Store the previous "live" status of each streamer to detect transitions (offline -> live).
+- [x] Implement logic to fetch stream status for the followed user IDs.
+- [x] Store the previous "live" status of each streamer to detect transitions (offline -> live).
 - [x] Handle Twitch API authentication (**Client ID + Client Secret -> App Access Token**).
 - [x] Handle potential API errors and rate limiting gracefully.
 
 ### 3. Desktop Notifications
 
 - [x] Choose and add a desktop notification library (e.g., `notify-rust`).
-- [ ] Implement a function to send a notification.
-- [ ] Notification content: "[StreamerName] is live playing [GameName]!"
-- [ ] Ensure notifications work correctly on Linux (DBus).
+- [x] Implement a function to send a notification.
+- [x] Notification content: "[StreamerName] is live playing [GameName]!"
+- [x] Ensure notifications work correctly on Linux (DBus).
 
 ### 4. Core Application Loop & Background Execution
 
 - [x] Set up an asynchronous runtime (e.g., `tokio`).
-- [ ] Implement the main loop:
+- [x] Implement the main loop:
   - [x] Load configuration.
-  - [ ] Periodically (e.g., every 60 seconds) query the Twitch API for streamer statuses.
-  - [ ] Compare current status with previous status.
-  - [ ] If a streamer transitioned to live, send a notification.
-  - [ ] Update the stored previous status.
+  - [x] Periodically (e.g., every 60 seconds) query the Twitch API for streamer statuses.
+  - [x] Compare current status with previous status.
+  - [x] If a streamer transitioned to live, send a notification.
+  - [x] Update the stored previous status.
 - [x] Add basic logging (e.g., using `tracing` or `log` crates).
 - [ ] Ensure the application can run as a background process (e.g., using `nohup`, `systemd`, or potentially detaching itself).
 
