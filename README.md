@@ -49,4 +49,39 @@ The application will run in the foreground, periodically checking streamer statu
 - **Format code:** `cargo fmt`
 - **Lint code:** `cargo clippy -- -D warnings` (Treat warnings as errors)
 - **Format other files:** `prettier --write .`
-- **Generate changelog:** `git cliff --latest --output CHANGELOG.md` (Run after tagging a release)
+- **Run checks before commit:** Uses `pre-commit` hooks (automatically installed via `pre-commit install`).
+
+## Releasing
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/) for commit messages and [Semantic Versioning](https://semver.org/) for versioning.
+
+1.  Determine the next version number (e.g., `v0.1.0`).
+2.  Update `CHANGELOG.md` using `git-cliff`:
+    ```bash
+    git cliff --tag vX.Y.Z # Replace vX.Y.Z with the new version
+    ```
+3.  Review the generated `CHANGELOG.md`.
+4.  Commit the changelog:
+    ```bash
+    git add CHANGELOG.md
+    git commit -m "docs: Update CHANGELOG.md for vX.Y.Z"
+    ```
+5.  Tag the release:
+    ```bash
+    git tag vX.Y.Z
+    ```
+6.  Push the commit and tag:
+    ```bash
+    git push
+    git push --tags
+    ```
+
+## Generating Changelog (Manual)
+
+To generate the changelog manually (e.g., to see unreleased changes):
+
+```bash
+git cliff --unreleased --output CHANGELOG.md
+# Or to just view it without writing:
+git cliff --unreleased
+```
