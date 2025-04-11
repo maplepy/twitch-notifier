@@ -1,42 +1,87 @@
-# Twitch Notifier
+# Twitch Notifier 🚀
 
-A simple Rust application to send desktop notifications when your favorite Twitch streamers go live.
+A simple Rust application to send desktop notifications 🔔 when your favorite Twitch streamers go live.
 
-## Features (MVP)
+## ✨ Features
 
-- Monitors a configurable list of Twitch streamers.
-- Sends a desktop notification when a streamer starts streaming.
-- Includes the game being played in the notification.
+- Monitors a configurable list of Twitch streamers via the Twitch API 👀.
+- Uses `libnotify` to send desktop notifications when a monitored streamer goes live 💻.
+- Displays the streamer's name and the game they are currently playing in the notification 🎮.
+- Periodically checks streamer status in the background ⏰.
+- Configurable polling interval (Future) ⚙️.
+- Option to customize notification appearance (Future) 🎨.
 
-## Setup
+## 🚀 Setup
 
-1.  **Clone the repository:**
-    ```bash
-    git clone <repository-url> # Replace with actual URL later
-    cd twitch-notifier
-    ```
-2.  **Configure:**
+### 🔧 Prerequisites
 
-    - Copy `config.example.toml` to `config.toml` (We will create this file later).
-    - Edit `config.toml` and add your Twitch Client ID and the usernames of the streamers you want to follow.
+1. **Rust Toolchain:** Install Rust using `rustup`:
 
-    ```toml
-    # config.toml
-    twitch_client_id = "YOUR_TWITCH_CLIENT_ID"
-    streamers = [
-        "streamer1",
-        "streamer2",
-    ]
-    ```
+   ```bash
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   ```
 
-    _Note: You need to register an application on the Twitch Developer portal to get a Client ID._
+2. **System Dependencies:** Install required libraries for desktop notifications.
 
-3.  **Build:**
-    ```bash
-    cargo build --release
-    ```
+   - **Arch Linux:**
+     ```bash
+     yay -S libdbusmenu-glib pkgconf
+     ```
+   - **Debian/Ubuntu:**
+     ```bash
+     sudo apt update && sudo apt install libdbus-1-dev pkg-config
+     ```
 
-## Usage
+3. **Development Tools (Optional but Recommended):**
+   - **pre-commit:** For running checks before commits.
+     ```bash
+     yay -S pre-commit # Arch
+     # or: pip install pre-commit
+     ```
+   - **git-cliff:** For generating the changelog.
+     ```bash
+     yay -S git-cliff # Arch
+     # or: cargo install git-cliff
+     ```
+
+### 📦 Installation
+
+1. **Clone the repository:**
+
+   ```bash
+   git clone https://github.com/maplepy/twitch-notifier
+   cd twitch-notifier
+   ```
+
+2. **Install pre-commit hooks (Optional):**
+
+   ```bash
+   pre-commit install
+   ```
+
+3. **Configure the application:**
+
+   - Copy the example configuration: `cp config.example.toml config.toml`
+   - Edit `config.toml`: Add your Twitch Client ID and Client Secret (obtained from the [Twitch Developer portal](https://dev.twitch.tv/console/apps)). It's recommended to name your application "twitch-notifier" when registering. Add the list of streamer usernames you want to monitor.
+   - **🚨 IMPORTANT:** Never commit `config.toml` to version control!
+
+   ```toml
+   # config.toml
+   twitch_client_id = "YOUR_TWITCH_CLIENT_ID"
+   twitch_client_secret = "YOUR_TWITCH_CLIENT_SECRET"
+   streamers = [
+       "streamer_username1",
+       "streamer_username2"
+   ]
+   check_interval_seconds = 60  # Optional, defaults to 60
+   ```
+
+4. **Build the application:**
+   ```bash
+   cargo build --release
+   ```
+
+## ▶️ Usage
 
 ```bash
 ./target/release/twitch_notifier
@@ -44,14 +89,14 @@ A simple Rust application to send desktop notifications when your favorite Twitc
 
 The application will run in the foreground, periodically checking streamer status. Run it in the background using `nohup` or a process manager like `systemd` for continuous monitoring.
 
-## Development
+## 🛠️ Development
 
 - **Format code:** `cargo fmt`
 - **Lint code:** `cargo clippy -- -D warnings` (Treat warnings as errors)
 - **Format other files:** `prettier --write .`
 - **Run checks before commit:** Uses `pre-commit` hooks (automatically installed via `pre-commit install`).
 
-## Releasing
+## 🔖 Releasing
 
 This project uses [Conventional Commits](https://www.conventionalcommits.org/) for commit messages and [Semantic Versioning](https://semver.org/) for versioning.
 
@@ -76,7 +121,7 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/) f
     git push --tags
     ```
 
-## Generating Changelog (Manual)
+## 📜 Generating Changelog (Manual)
 
 To generate the changelog manually (e.g., to see unreleased changes):
 
