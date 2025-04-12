@@ -191,8 +191,13 @@ async fn run_monitor(settings: Settings, mut rx_app: mpsc::Receiver<AppMessage>)
                                             current_stream.user_name, current_stream.game_name
                                         );
                                         notifications::send_notification(
-                                            &format!("{} changed game to {}!", current_stream.user_name, current_stream.game_name),
-                                            "", // No separate body needed for game change yet
+                                            &format!(
+                                                "{} changed game to {}!",
+                                                current_stream.user_name,
+                                                current_stream.game_name
+                                            ),
+                                            "", // Body is empty for game change
+                                            Some(&current_stream.title), // Pass title
                                         );
                                     }
                                 }
@@ -204,6 +209,7 @@ async fn run_monitor(settings: Settings, mut rx_app: mpsc::Receiver<AppMessage>)
                                     notifications::send_notification(
                                         &format!("{} just went live!", current_stream.user_name),
                                         &format!("Playing: {}", current_stream.game_name),
+                                        Some(&current_stream.title), // Pass title
                                     );
                                 }
                             }
