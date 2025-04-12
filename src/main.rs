@@ -2,7 +2,7 @@ mod notifications;
 mod twitch_api;
 
 use serde::Deserialize;
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::time::Duration;
 use thiserror::Error;
 use tokio::runtime::Runtime;
@@ -13,7 +13,7 @@ use tracing_subscriber::FmtSubscriber;
 use tray_item::TrayItem;
 
 // Import the client and its error type
-use crate::twitch_api::{ApiError, TwitchClient, User};
+use crate::twitch_api::{ApiError, Stream, TwitchClient, User};
 
 // For control messages TO the monitor task
 #[derive(Debug)]
@@ -162,7 +162,7 @@ async fn run_monitor(settings: Settings, mut rx_app: mpsc::Receiver<AppMessage>)
     }
 
     let monitored_user_ids: Vec<String> = monitored_users.iter().map(|u| u.id.clone()).collect();
-    let mut previously_live_user_ids: HashSet<String> = HashSet::new();
+    let mut previous_stream_states: HashMap<String, Stream> = HashMap::new();
 
     info!(
         "(Monitor Task) Starting monitoring loop (checking every {} seconds)",
@@ -177,20 +177,39 @@ async fn run_monitor(settings: Settings, mut rx_app: mpsc::Receiver<AppMessage>)
                 debug!("(Monitor Task) Checking stream statuses...");
                 match twitch_client.get_streams_by_user_id(&monitored_user_ids).await {
                     Ok(live_streams) => {
-                        let currently_live_user_ids: HashSet<String> = live_streams.iter().map(|s| s.user_id.clone()).collect();
+                        let current_streams_map: HashMap<String, Stream> = live_streams
+                            .into_iter()
+                            .map(|s| (s.user_id.clone(), s))
+                            .collect();
 
-                        // Detect streams that just went live
-                        for stream in &live_streams {
-                            if !previously_live_user_ids.contains(&stream.user_id) {
-                                info!(
-                                    "{} just went live playing {}!",
-                                    stream.user_name, stream.game_name
-                                );
-                                notifications::send_notification(&stream.user_name, &stream.game_name);
+                        for (user_id, current_stream) in &current_streams_map {
+                            match previous_stream_states.get(user_id) {
+                                Some(previous_stream) => {
+                                    if current_stream.game_id != previous_stream.game_id {
+                                        info!(
+                                            "{} changed game to {}!",
+                                            current_stream.user_name, current_stream.game_name
+                                        );
+                                        notifications::send_notification(
+                                            &format!("{} changed game to {}!", current_stream.user_name, current_stream.game_name),
+                                            "", // No separate body needed for game change yet
+                                        );
+                                    }
+                                }
+                                None => {
+                                    info!(
+                                        "{} just went live playing {}!",
+                                        current_stream.user_name, current_stream.game_name
+                                    );
+                                    notifications::send_notification(
+                                        &format!("{} just went live!", current_stream.user_name),
+                                        &format!("Playing: {}", current_stream.game_name),
+                                    );
+                                }
                             }
                         }
-                        // Update the previous state for the next check
-                        previously_live_user_ids = currently_live_user_ids;
+
+                        previous_stream_states = current_streams_map;
                     }
                     Err(ApiError::Request(e)) if e.is_timeout() => {
                         warn!("(Monitor Task) Twitch API request timed out. Retrying next cycle.");
