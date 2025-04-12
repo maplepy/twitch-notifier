@@ -1,0 +1,10 @@
+---
+description: making changes to the mvp, updating plan, tasks
+globs:
+alwaysApply: false
+---
+# Cursor Rule: Plan Update & Testing Reminder
+
+Remember to update [Plan.md](mdc:Plan.md) to reflect any changes made.
+
+Also, ensure the application is tested thoroughly before committing.
