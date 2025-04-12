@@ -53,10 +53,10 @@ This plan outlines the Minimum Viable Product (MVP) features for the Rust-based 
 
 ### 6. System Tray Icon & Menu (New Priority)
 
-- [ ] Add systray crate dependency (e.g., `tray-item`).
-- [ ] Create basic systray icon.
-- [ ] Implement logic to show/hide the main window (if we add one later) or perform actions (e.g., force check, quit).
-- [ ] Ensure systray runs on its own thread or integrates with the async runtime.
+- [x] Add systray crate dependency (e.g., `tray-item`).
+- [ ] Create basic systray icon. (Using placeholder for now)
+- [x] Implement logic to show/hide the main window (if we add one later) or perform actions (e.g., force check, quit). (Implemented Quit)
+- [x] Ensure systray runs on its own thread or integrates with the async runtime. (Main thread + GTK loop + channel)
 - [ ] Add configuration option to enable/disable systray.
 
 ### 7. Game Change Notifications (New Priority)
