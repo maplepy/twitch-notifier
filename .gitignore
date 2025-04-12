@@ -1,12 +1,8 @@
-# General
-*.lock
-
 # Config
 config.toml
 
 # Rust / Cargo
 target/
-# Cargo.lock
 
 # Build artifacts
 *.o

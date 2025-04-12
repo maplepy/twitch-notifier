@@ -35,7 +35,7 @@ body = """
 # Parse the commits based on the Conventional Commits specification
 conventional_commits = true
 # Filter out commits that are not part of the changelog
-filter_commits = true
+filter_commits = true # Revert back to true
 # Glob pattern for matching git tags
 tag_pattern = "v[0-9].*"
 # Skip tags that are not annotated
