@@ -66,20 +66,29 @@ This plan outlines the Minimum Viable Product (MVP) features for the Rust-based 
 - [x] Send a different notification format when a streamer changes games (e.g., "[Streamer] is now playing [New Game]!").
 - [x] Update the stored game state.
 
-### 8. Game Filtering (Blacklist/Whitelist)
+### 8. Basic User Interface
+
+- [ ] Choose and add GTK library dependency (e.g., `gtk4-rs`).
+- [ ] Design a simple window layout (e.g., list of followed streamers, status, maybe filter settings later).
+- [ ] Implement logic to display followed streamers and their current status (Live/Offline, Game).
+- [ ] Integrate the UI with the main application logic (e.g., update UI when status changes).
+- [ ] Connect UI elements to actions (e.g., Quit button, potentially adding/removing streamers later).
+- [ ] Handle UI events within the application loop or a dedicated thread.
+
+### 9. Game Filtering (Blacklist/Whitelist)
 
 - [ ] Add configuration options for game blacklist/whitelist mode.
 - [ ] Add configuration option for list of games (either to block or allow).
 - [ ] Update configuration loading to include filter settings.
 - [ ] Modify notification logic to check game name against the filter list before sending.
 
-### 9. Improved Background Execution / Service
+### 10. Improved Background Execution / Service
 
 - [ ] Create a systemd service unit file for running the notifier reliably.
 - [ ] Add instructions to `README.md` for enabling/starting the systemd service.
 - [ ] (Optional) Explore self-daemonization options (less common with systemd).
 
-### 10. Refinements & Other
+### 11. Refinements & Other
 
 - [ ] Implement token expiry checking and proactive refresh in `TwitchClient`.
 - [ ] Add command-line arguments (e.g., for specifying config file path, log level).
