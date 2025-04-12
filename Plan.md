@@ -61,10 +61,10 @@ This plan outlines the Minimum Viable Product (MVP) features for the Rust-based 
 
 ### 7. Game Change Notifications (New Priority)
 
-- [ ] Store the previously seen game ID/name for each live stream.
-- [ ] In the main loop, compare the current game with the previous game for live streams.
-- [ ] Send a different notification format when a streamer changes games (e.g., "[Streamer] is now playing [New Game]!").
-- [ ] Update the stored game state.
+- [x] Store the previously seen game ID/name for each live stream.
+- [x] In the main loop, compare the current game with the previous game for live streams.
+- [x] Send a different notification format when a streamer changes games (e.g., "[Streamer] is now playing [New Game]!").
+- [x] Update the stored game state.
 
 ### 8. Game Filtering (Blacklist/Whitelist)
 
