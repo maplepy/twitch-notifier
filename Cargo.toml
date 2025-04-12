@@ -6,22 +6,22 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = { version = "1", features = [
+tokio = { version = "1.44.2", features = [
     "full",
 ] } # Full features for async runtime (macros, time, rt-multi-thread)
-reqwest = { version = "0.11", features = [
+reqwest = { version = "0.12.15", features = [
     "json",
 ] } # HTTP client with JSON support
-serde = { version = "1.0", features = ["derive"] } # Serialization framework
-serde_json = "1.0" # JSON support for serde
-notify-rust = "4" # Desktop notifications
-config = { version = "0.13", features = [
+serde = { version = "1.0.219", features = ["derive"] } # Serialization framework
+serde_json = "1.0.140" # JSON support for serde
+notify-rust = "4.11.7" # Desktop notifications
+config = { version = "0.15.11", features = [
     "toml",
 ] } # Configuration file handling (TOML format)
-thiserror = "1.0" # Error handling library
-tracing = "0.1" # Logging framework
-tracing-subscriber = { version = "0.3", features = [
+thiserror = "2.0.12" # Error handling library
+tracing = "0.1.41" # Logging framework
+tracing-subscriber = { version = "0.3.19", features = [
     "env-filter",
 ] } # Logging subscriber
-tray-item = { version = "0.8", features = ["libappindicator"] } # Reverted back to libappindicator
-gtk = "0.15" # Keep for gtk::init()
+tray-item = { version = "0.10.0", features = ["libappindicator"] }
+gtk = "0.18.2" # Keep for gtk::init()
